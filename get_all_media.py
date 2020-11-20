@@ -125,14 +125,22 @@ def get_all_media(id, folder_name):
 	return ig_request("003056d32c2554def87228bc3fd9668a", variables, resolver_media, resolver_args = extra)
 		
 
-username = input("Username: ")
+def parse_args():
+	import argparse
+	
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-u', '--username', type=str, required=True, help="Target username.")
+	
+	return parser.parse_args()
 
-if(not os.path.exists(os.path.join(os.getcwd(), username))):
-	os.mkdir(username)
+args = parse_args()
 
-	id = get_id(username)
+if(not os.path.exists(os.path.join(os.getcwd(), args.username))):
+	os.mkdir(args.username)
+
+	id = get_id(args.username)
 	if(id != ""):
-		if(not get_all_media(id, username)):
-			print("Se ha producido un error al obtener el contenido multimedia del usuario %s." % (username))
+		if(not get_all_media(id, args.username)):
+			print("Se ha producido un error al obtener el contenido multimedia del usuario %s." % (args.username))
 else:
-	print("Por favor, elimine la carpeta %s que se encuentra en su directorio actual." % (username))
+	print("Por favor, elimine la carpeta %s que se encuentra en su directorio actual." % (args.username))
