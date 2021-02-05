@@ -5,11 +5,13 @@ import os
 
 
 #Obtiene el ID a partir de un username, en caso de error retorna una cadena de texto vacía.
-def get_id(username):
-	resp = get("https://www.instagram.com/" + username + "/?__a=1")
+def get_id(username, cookies):
+	resp = get("https://www.instagram.com/" + username + "/?__a=1", cookies = cookies)
 
 	if resp.status_code == 200:
 		return resp.json()["graphql"]["user"]["id"];
+	else:
+		print("Status code:", resp.status_code)
 
 	return "";
 	
@@ -112,7 +114,7 @@ def resolver_media(variables, data_resp, extra_args):
 		
 	return False
 	
-def get_all_media(id, folder_name):	
+def get_all_media(id, folder_name, cookies):
 	variables = {
 		"id": id,
 		"first": 50
@@ -122,7 +124,7 @@ def get_all_media(id, folder_name):
 		"folder_name": folder_name
 	}
 	
-	return ig_request("003056d32c2554def87228bc3fd9668a", variables, resolver_media, resolver_args = extra)
+	return ig_request("003056d32c2554def87228bc3fd9668a", variables, resolver_media, resolver_args = extra, cookies = cookies)
 		
 
 def parse_args():
@@ -130,17 +132,29 @@ def parse_args():
 	
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-u', '--username', type=str, required=True, help="Target username.")
+	parser.add_argument('-s', '--sessionid', type=str, required=True, help="sessionid cookie (from an open Instagram account).")
 	
 	return parser.parse_args()
 
 args = parse_args()
 
+cookies = {
+	"sessionid": args.sessionid
+}
+
 if(not os.path.exists(os.path.join(os.getcwd(), args.username))):
 	os.mkdir(args.username)
 
-	id = get_id(args.username)
-	if(id != ""):
-		if(not get_all_media(id, args.username)):
-			print("Se ha producido un error al obtener el contenido multimedia del usuario %s." % (args.username))
+	id = get_id(args.username, cookies)
+	while(id == ""):
+		print("Ha ocurrido un error al obtener la ID del usuario.")
+		print("Reintentando obtener ID...")
+		sleep(5);
+		
+		id = get_id(args.username, cookies)
+		
+	print("ID obtenida:", id)
+	if(not get_all_media(id, args.username, cookies)):
+		print("Se ha producido un error al obtener el contenido multimedia del usuario %s." % (args.username))
 else:
 	print("Por favor, elimine la carpeta %s que se encuentra en su directorio actual." % (args.username))
